@@ -12,23 +12,30 @@ function setConnected(connected) {
 }
 
 function connect() {
+    //var perrochango = Math.floor(Math.random()>0.5?1:0);
+    //console.log("el valor es " +perrochango);
     var socket = new SockJS('http://192.168.10.54:8084/mail/websocket');
+    // 
     stompClient = Stomp.over(socket);
     stompClient.connect({}, function (frame) {
+        console.log(socket._transport.url);
+        idsesion = socket._transport.url.split("/")[6];
         setConnected(true);
-        //console.log('Connected: ' + frame);
-        stompClient.subscribe('/controlmensajes/mensajes', function (respuesta) {
-//            escribir(JSON.parse(respuesta.body).texto);
+        stompClient.subscribe('/mailcore/respuestas-' + idsesion, function (respuesta) {
             escribir(JSON.parse(respuesta.body));
         });
+        stompClient.subscribe('/mailcore/respuestas', function (respuesta) {
+            escribir(JSON.parse(respuesta.body));
+        });
+        stompClient.send("/mensajes/registrar", {}, JSON.stringify({'numero': 15, "idsesion": idsesion}));
     });
 }
 
 
-$('#desconectar').click(function(){
+$('#desconectar').click(function () {
     disconnect();
 });
-$('#conectar').click(function(){
+$('#conectar').click(function () {
     connect();
 });
 
@@ -45,9 +52,9 @@ function enviarMensaje() {
     stompClient.send("/mensajes/prueba", {}, JSON.stringify({'texto': $("#texto").val()}));
 }
 
-function escribir(respuesta) {    
+function escribir(respuesta) {
 //    $("#textarea").val($("#textarea").val() + "\n[" + respuesta.from + "] " + respuesta.event + " > " + respuesta.text);
-$("#textarea").val($("#textarea").val() + "\n"+respuesta.texto);
+    $("#textarea").val($("#textarea").val() + "\n" + respuesta.texto);
     document.getElementById("textarea").scrollTop = document.getElementById("textarea").scrollHeight;
     $("#texto").val('');
 }
